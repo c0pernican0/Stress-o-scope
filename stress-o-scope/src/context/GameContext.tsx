@@ -1,7 +1,7 @@
 // src/context/GameContext.tsx
-'use client'; // Required for Context API in Next.js App Router
+'use client';
 
-import React, { createContext, useReducer, useContext, ReactNode, useCallback } from 'react'; // Added useCallback
+import React, { createContext, useReducer, useContext, ReactNode, useCallback, useEffect } from 'react'; // Added useEffect
 import {
   GameState,
   GameAction,
@@ -29,59 +29,82 @@ const initialState: GameState = {
 // Create the context with a default value that should ideally not be used directly
 const GameContext = createContext<GameContextProps | undefined>(undefined);
 
+const SESSION_STORAGE_KEY = 'stressOScopeGameState';
+
+// Function to load state from session storage
+const loadStateFromSessionStorage = (): Partial<GameState> | undefined => {
+  if (typeof window === 'undefined') return undefined;
+  try {
+    const serializedState = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (serializedState === null) {
+      return undefined;
+    }
+    const storedState = JSON.parse(serializedState);
+    // Ensure essential parts for rehydration are present, otherwise discard
+    if (typeof storedState.currentGame === 'number') {
+        // Could add more checks here if needed
+        return storedState;
+    }
+    return undefined;
+  } catch (error) {
+    console.warn("Error loading state from session storage:", error);
+    return undefined;
+  }
+};
+
+
 // Reducer function to manage state transitions
 const gameReducer = (state: GameState, action: GameAction): GameState => {
+  let newState: GameState;
   switch (action.type) {
     case 'NEXT_GAME':
       const nextGameIndex = state.currentGame + 1;
-      // Assuming 4 is the results page, so game completes after game 3 (index)
-      // Games: 0=intro, 1=cosmic, 2=memory, 3=narrative. After narrative (index 3), next is results (index 4)
       const isNowComplete = nextGameIndex === 4;
-      return {
+      newState = {
         ...state,
         currentGame: nextGameIndex,
-        isComplete: isNowComplete || state.isComplete, // Persist completion
+        isComplete: isNowComplete || state.isComplete,
       };
+      break;
     case 'SET_COSMIC_RESULTS':
-      return {
-        ...state,
-        cosmicResults: action.payload,
-      };
+      newState = { ...state, cosmicResults: action.payload };
+      break;
     case 'SET_MEMORY_RESULTS':
-      return {
-        ...state,
-        memoryResults: action.payload,
-      };
+      newState = { ...state, memoryResults: action.payload };
+      break;
     case 'SET_NARRATIVE_RESULTS':
-      return {
-        ...state,
-        narrativeResults: action.payload,
-      };
+      newState = { ...state, narrativeResults: action.payload };
+      break;
     case 'TRIGGER_ANALYSIS':
-      return {
+      newState = {
         ...state,
         analysisLoading: true,
         analysisError: null,
-        finalAnalysis: null, // Clear previous analysis
+        finalAnalysis: null,
       };
+      break;
     case 'SET_ANALYSIS_COMPLETE':
-      return {
+      newState = {
         ...state,
         finalAnalysis: action.payload,
         analysisLoading: false,
       };
+      break;
     case 'SET_ANALYSIS_ERROR':
-      return {
+      newState = {
         ...state,
         analysisError: action.payload,
         analysisLoading: false,
       };
+      break;
     case 'RESET_SESSION':
-      return {
-        ...initialState, // Spread the base initial state
-        sessionId: typeof window !== 'undefined' ? crypto.randomUUID() : '', // Generate new session ID
-        startTime: Date.now(), // Reset start time
-        // Explicitly reset fields that might not be in initialState if it's ever changed shallowly
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      }
+      newState = {
+        ...initialState,
+        sessionId: typeof window !== 'undefined' ? crypto.randomUUID() : '',
+        startTime: Date.now(),
         currentGame: 0,
         isComplete: false,
         cosmicResults: null,
@@ -91,9 +114,31 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         analysisLoading: false,
         analysisError: null,
       };
+      break;
     default:
-      return state;
+      newState = state;
   }
+
+  // Save relevant parts of the new state to session storage (excluding sensitive or very large data if any)
+  if (typeof window !== 'undefined' && action.type !== 'RESET_SESSION') { // Avoid saving the reset state immediately before it's used
+    try {
+      const stateToSave = {
+        currentGame: newState.currentGame,
+        isComplete: newState.isComplete,
+        cosmicResults: newState.cosmicResults,
+        memoryResults: newState.memoryResults,
+        narrativeResults: newState.narrativeResults,
+        finalAnalysis: newState.finalAnalysis, // Save analysis too if user refreshes on results page
+        sessionId: newState.sessionId, // Persist session ID
+        startTime: newState.startTime, // Persist original start time
+        // analysisLoading and analysisError are transient, probably don't need to save.
+      };
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(stateToSave));
+    } catch (error) {
+      console.warn("Error saving state to session storage:", error);
+    }
+  }
+  return newState;
 };
 
 // GameProvider component
@@ -102,7 +147,18 @@ interface GameProviderProps {
 }
 
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
-  const [state, dispatch] = useReducer(gameReducer, initialState);
+  // Initialize state with data from session storage if available
+  const [state, dispatch] = useReducer(gameReducer, {
+    ...initialState,
+    ...loadStateFromSessionStorage(), // Spread stored state over initial, potentially overriding
+    // Ensure crucial fields like sessionId and startTime are re-initialized if not in storedState or if it's a fresh session
+    sessionId: loadStateFromSessionStorage()?.sessionId || (typeof window !== 'undefined' ? crypto.randomUUID() : ''),
+    startTime: loadStateFromSessionStorage()?.startTime || Date.now(),
+  });
+
+
+  // Effect to clear session storage on explicit session reset through UI, if reducer doesn't cover all edge cases.
+  // The reducer's RESET_SESSION already handles this.
 
   // Convenience action dispatchers
   const nextGame = useCallback(() => dispatch({ type: 'NEXT_GAME' }), []);
