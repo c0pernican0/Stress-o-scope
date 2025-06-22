@@ -32,3 +32,25 @@ body {
     rgb(var(--background-start-rgb));
   /* Default body background, can be overridden by layouts */
 }
+
+/* Breathing Circle Animation */
+@keyframes pulseBreath {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(138, 43, 226, 0.7); } /* Nebula Purple base, inhale start */
+  33.33% { transform: scale(1.1); box-shadow: 0 0 10px 10px rgba(138, 43, 226, 0.3); } /* Inhale end / Hold start */
+  66.66% { transform: scale(1.1); box-shadow: 0 0 10px 10px rgba(138, 43, 226, 0.3); } /* Hold end / Exhale start */
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(138, 43, 226, 0.0); } /* Exhale end */
+}
+
+.animate-pulseBreath {
+  animation: pulseBreath 12s infinite ease-in-out;
+}
+
+/* Simple Fade-in Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
