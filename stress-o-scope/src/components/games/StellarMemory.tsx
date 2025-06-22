@@ -352,6 +352,7 @@ const StellarMemory: React.FC = () => {
                 }}
                 onClick={() => handleUserInput(element.id)}
                 disabled={gamePhase !== 'listening'}
+                aria-label={element.name} // Added aria-label
               >
                 {element.icon}
               </button>
