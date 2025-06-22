@@ -1,7 +1,7 @@
 // src/context/GameContext.tsx
 'use client'; // Required for Context API in Next.js App Router
 
-import React, { createContext, useReducer, useContext, ReactNode } from 'react';
+import React, { createContext, useReducer, useContext, ReactNode, useCallback } from 'react'; // Added useCallback
 import {
   GameState,
   GameAction,
@@ -105,28 +105,68 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, initialState);
 
   // Convenience action dispatchers
-  const nextGame = () => dispatch({ type: 'NEXT_GAME' });
-  const setCosmicResults = (data: CosmicResults) => dispatch({ type: 'SET_COSMIC_RESULTS', payload: data });
-  const setMemoryResults = (data: MemoryResults) => dispatch({ type: 'SET_MEMORY_RESULTS', payload: data });
-  const setNarrativeResults = (data: NarrativeResults) => dispatch({ type: 'SET_NARRATIVE_RESULTS', payload: data });
-  const triggerAnalysis = () => dispatch({ type: 'TRIGGER_ANALYSIS' });
-  const setAnalysisComplete = (data: FinalAnalysis) => dispatch({ type: 'SET_ANALYSIS_COMPLETE', payload: data });
-  const setAnalysisError = (error: string) => dispatch({ type: 'SET_ANALYSIS_ERROR', payload: error });
-  const resetSession = () => dispatch({ type: 'RESET_SESSION' });
+  const nextGame = useCallback(() => dispatch({ type: 'NEXT_GAME' }), []);
+  const setCosmicResults = useCallback((data: CosmicResults) => dispatch({ type: 'SET_COSMIC_RESULTS', payload: data }), []);
+  const setMemoryResults = useCallback((data: MemoryResults) => dispatch({ type: 'SET_MEMORY_RESULTS', payload: data }), []);
+  const setNarrativeResults = useCallback((data: NarrativeResults) => dispatch({ type: 'SET_NARRATIVE_RESULTS', payload: data }), []);
+
+  const setAnalysisComplete = useCallback((data: FinalAnalysis) => dispatch({ type: 'SET_ANALYSIS_COMPLETE', payload: data }), []);
+  const setAnalysisError = useCallback((error: string) => dispatch({ type: 'SET_ANALYSIS_ERROR', payload: error }), []);
+  const resetSession = useCallback(() => dispatch({ type: 'RESET_SESSION' }), []);
+
+  const triggerAnalysis = useCallback(async () => {
+    if (!state.cosmicResults || !state.memoryResults || !state.narrativeResults) {
+      console.error("Cannot trigger analysis: Not all game results are available.");
+      setAnalysisError("Cannot trigger analysis: Missing some game results.");
+      return;
+    }
+
+    dispatch({ type: 'TRIGGER_ANALYSIS' }); // Sets loading to true, clears previous error/analysis
+
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cosmicResults: state.cosmicResults,
+          memoryResults: state.memoryResults,
+          narrativeResults: state.narrativeResults,
+        }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        // Use error message from API response if available, otherwise a generic one
+        const errorMessage = responseData.error || `API request failed with status ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      // Assuming responseData is of type FinalAnalysis
+      setAnalysisComplete(responseData as FinalAnalysis);
+
+    } catch (error: any) {
+      console.error("Error triggering analysis:", error);
+      setAnalysisError(error.message || "An unexpected error occurred while fetching analysis.");
+    }
+  }, [state.cosmicResults, state.memoryResults, state.narrativeResults, setAnalysisComplete, setAnalysisError]);
+
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = React.useMemo(() => ({
     state,
-    dispatch, // Exposing dispatch directly if needed, alongside convenience functions
+    dispatch,
     nextGame,
     setCosmicResults,
     setMemoryResults,
     setNarrativeResults,
     triggerAnalysis,
-    setAnalysisComplete,
-    setAnalysisError,
+    setAnalysisComplete, // Keep these if direct dispatch is ever needed from a component, though triggerAnalysis is primary
+    setAnalysisError,    // Same as above
     resetSession,
-  }), [state]); // Add other dependencies if action functions are not stable (they are here)
+  }), [state, nextGame, setCosmicResults, setMemoryResults, setNarrativeResults, triggerAnalysis, setAnalysisComplete, setAnalysisError, resetSession]);
 
   return (
     <GameContext.Provider value={contextValue}>
