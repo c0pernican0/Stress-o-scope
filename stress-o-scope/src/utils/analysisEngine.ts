@@ -1,5 +1,15 @@
 import { CosmicResults, MemoryResults, NarrativeResults, FinalAnalysis, PsychProfileDimensions } from '@/context/GameTypes';
 
+/**
+ * Generates a fallback analysis object if the primary AI analysis fails.
+ * This function uses simple heuristics based on game results to provide a plausible,
+ * albeit simplified, stress analysis.
+ *
+ * @param cosmicResults - Results from the Cosmic Calm game.
+ * @param memoryResults - Results from the Stellar Memory game.
+ * @param narrativeResults - Results from the Narrative Waves game.
+ * @returns A `FinalAnalysis` object with fallback data.
+ */
 export function getFallbackAnalysis(
   cosmicResults: CosmicResults | null,
   memoryResults: MemoryResults | null,
