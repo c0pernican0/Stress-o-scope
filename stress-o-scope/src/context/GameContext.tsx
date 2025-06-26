@@ -1,7 +1,7 @@
 // src/context/GameContext.tsx
 'use client';
 
-import React, { createContext, useReducer, useContext, ReactNode, useCallback, useEffect } from 'react'; // Added useEffect
+import React, { createContext, useReducer, useContext, ReactNode, useCallback } from 'react'; // Added useEffect
 import {
   GameState,
   GameAction,
