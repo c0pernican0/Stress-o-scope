@@ -1,5 +1,15 @@
 // src/context/GameTypes.ts
 
+// Psychological profile dimensions for narrative analysis
+export interface PsychProfileDimensions {
+  planning: number;
+  control: number;
+  social: number;
+  curiosity: number;
+  anxiety: number;
+  exploration: number;
+}
+
 // Individual game result structures
 export interface CosmicResults {
   initialElement: string;
@@ -22,14 +32,7 @@ export interface MemoryResults {
 
 export interface NarrativeResults {
   decisionSpeed: number[]; // Time for each segment
-  psychProfile: {
-    planning: number;
-    control: number;
-    social: number;
-    curiosity: number;
-    anxiety: number;
-    exploration: number;
-  };
+  psychProfile: PsychProfileDimensions; // Now uses the defined interface
   choiceConsistency: number; // 0-1
   totalTime: number;
   storyPath: string[]; // Sequence of choices made
