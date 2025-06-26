@@ -9,7 +9,7 @@ import CosmicCalm from '@/components/games/CosmicCalm';
 import StellarMemory from '@/components/games/StellarMemory';
 import NarrativeWaves from '@/components/games/NarrativeWaves';
 import { LoadingSpinner } from '@/components/ui';
-import type { Metadata } from 'next';
+// import type { Metadata } from 'next';
 
 // Note: `export const metadata` for dynamic titles based on game state is complex in client components.
 // Static metadata can be set, or title updates could be managed via a client-side effect on document.title.
