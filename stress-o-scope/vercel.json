@@ -1,14 +1,4 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "env": {
-    "GROQ_API_KEY": "@groq_api_key"
-  },
   "headers": [
     {
       "source": "/(.*)",
@@ -16,9 +6,6 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "X-XSS-Protection", "value": "1; mode=block" }
-        // Note: Content-Security-Policy is more complex and often better managed
-        // via next.config.js for Next.js applications to allow for nonces or hashes if using inline scripts/styles.
-        // Example: { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';" }
       ]
     }
   ]
