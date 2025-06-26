@@ -5,16 +5,6 @@ import { useGameContext } from '@/context/GameContext';
 import { Button } from '@/components/ui';
 import { NarrativeResults, PsychProfileDimensions } from '@/context/GameTypes';
 
-// TypeScript Interfaces
-export interface PsychProfileDimensions {
-  planning: number;
-  control: number;
-  social: number;
-  curiosity: number;
-  anxiety: number;
-  exploration: number;
-}
-
 export interface StoryOption {
   text: string;
   effects: Partial<PsychProfileDimensions>; // Partial because not all options affect all dimensions
