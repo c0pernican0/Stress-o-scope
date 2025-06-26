@@ -36,7 +36,7 @@ export async function POST(request: Request) {
         narrative: NarrativeResults
     ): string {
         // Helper to format arrays/objects nicely for the prompt
-        const formatArray = (arr: any[] | undefined | null) => arr && arr.length > 0 ? arr.join(', ') : 'N/A';
+        const formatArray = (arr: unknown[] | undefined | null) => arr && arr.length > 0 ? arr.join(', ') : 'N/A';
         const formatObject = (obj: object | undefined | null) => obj ? JSON.stringify(obj, null, 2) : 'N/A';
 
         // Constructing detailed data presentation for each game
@@ -57,63 +57,52 @@ export async function POST(request: Request) {
         - Total Errors: ${memory.totalErrors || 0}
         - Average Reaction Time (ms): ${memory.averageReactionTime || 'N/A'}
         - Detailed Reaction Times (ms): ${formatArray(memory.reactionTimes)}
-        - Breathing Sync Rate (%): ${memory.breathingSyncRate !== null && memory.breathingSyncRate !== undefined ? memory.breathingSyncRate.toFixed(1) : 'N/A'}
+        - Breathing Sync Rate (%): ${memory.breathingSyncRate !== null && memory.breathingSyncRate !== undefined ?
+          (memory.breathingSyncRate * 100).toFixed(1) : 'N/A'}
         - Failure Point: ${memory.failurePoint || 'N/A'}
-        - Perceived Stress Progression (if available): ${formatArray(memory.stressProgression)}
         `;
 
         const narrativeData = `
-        Game 3: Narrative Waves (Interactive Storytelling)
-        - Decision Speeds per Segment (ms): ${formatArray(narrative.decisionSpeed)}
-        - Psychological Profile Scores: ${formatObject(narrative.psychProfile)}
-        - Choice Consistency Score (0-1): ${narrative.choiceConsistency !== null && narrative.choiceConsistency !== undefined ? narrative.choiceConsistency.toFixed(2) : 'N/A'}
-        - Story Path (Choices Made):
-          ${narrative.storyPath?.map((choice, i) => `  Segment ${i+1}: "${choice}"`).join('\n') || 'N/A'}
+        Game 3: Narrative Waves (Interactive Story)
+        - Decision Speed (ms): ${formatArray(narrative.decisionSpeed)}
+        - Psychological Profile:
+          ${formatObject(narrative.psychProfile)}
+        - Choice Consistency: ${narrative.choiceConsistency?.toFixed(2) || 'N/A'}
         - Total Time for Narrative Waves (ms): ${narrative.totalTime || 'N/A'}
         `;
 
-        // The main prompt for the AI
-        return `
-        You are an AI assistant for the 'Stress-O-Scope' application, designed to analyze user stress levels and patterns based on their performance in three interactive games.
-        Please provide a comprehensive analysis based on the following game data.
+        const prompt = `
+        Sei un esperto psicologo digitale specializzato in stress management e analisi comportamentale.
+        Analizza i seguenti risultati di tre test interattivi per lo stress:
 
         ${cosmicData}
         ${memoryData}
         ${narrativeData}
 
-        Analysis Instructions:
-        Based on all the provided data, please generate a JSON object with the following structure and content:
+        IMPORTANTE: Devi rispondere SOLO con un JSON valido senza testo aggiuntivo.
+        Analizza i dati e fornisci un profilo completo dello stress dell'utente.
+
+        Considera questi aspetti:
+        - Tempi di reazione e decision-making
+        - Pattern comportamentali e consistenza
+        - Capacità di gestire stress cognitivo
+        - Livelli di ansia e controllo
+        - Resilienza e adattabilità
+
+        RISPONDI ESCLUSIVAMENTE con questo formato JSON:
         {
-          "stressLevel": number, // An overall stress level from 1 (very low stress) to 10 (very high stress). Consider cognitive load (memory game errors, reaction times), emotional indicators (narrative choices like anxiety), and behavioral patterns (constellation, decision speeds).
-          "stressAreas": string[], // Identify key areas where stress might be manifesting. Examples: "cognitive" (e.g., from memory game performance, decision speed), "emotivo" (e.g., from narrative choices related to anxiety, control), "comportamentale" (e.g., scattered constellation, inconsistent choices). Choose 1-3 relevant areas.
-          "strengths": string[], // Identify 2-3 positive traits or strengths demonstrated by the user. Examples: "Resilience under pressure", "Good attention control (high breathing sync)", "Methodical planning (narrative choices)", "Creative expression (constellation type)", "Curiosity and openness (narrative/cosmic choices)".
-          "recommendations": string[], // Provide 3-5 personalized, actionable recommendations to manage stress or enhance well-being, tailored to the analysis. Examples: "Practice mindfulness for 5-10 minutes daily.", "Incorporate short breaks during demanding tasks.", "Explore creative outlets to express yourself.".
-          "cosmicHoroscope": string, // A short (2-3 sentences) uplifting, cosmic-themed "horoscope" or motivational message. Example: "The stars indicate a phase of insightful growth. Your ability to navigate challenges shines brightly. Embrace the journey ahead with cosmic calm."
-          "summary": string // A concise (1-2 sentences) summary of the user's overall stress profile and key takeaways.
+          "stressLevel": numero da 1 a 10,
+          "stressAreas": ["cognitivo", "emotivo", "comportamentale"],
+          "strengths": ["lista dei punti di forza rilevati"],
+          "recommendations": ["3-5 consigli pratici personalizzati per gestire lo stress"],
+          "cosmicHoroscope": "Oroscopo motivazionale personalizzato (2-3 frasi)",
+          "summary": "Riassunto profilo stress (1-2 frasi)"
         }
 
-        Interpretation Guidelines:
-        - Cosmic Calm:
-            - Constellation Pattern: 'centered' might suggest focus or control; 'scattered' might suggest distraction or creativity; 'organized' could be methodical.
-            - Response Times/Choices: Quick, impulsive choices vs. slow, deliberate ones. Choices might reflect mood or outlook.
-        - Stellar Memory:
-            - High max sequence length and low errors indicate good working memory and focus.
-            - Average Reaction Time: Lower is generally better. Increases might indicate rising cognitive load.
-            - Breathing Sync Rate: Higher % suggests better focus and calmness under pressure.
-            - Failure Point: Early failure might indicate lower stress resilience or difficulty with the task type.
-        - Narrative Waves:
-            - Psych Profile: High 'anxiety' or 'control' might correlate with stress. High 'planning', 'social', 'curiosity', 'exploration' can be strengths or indicate coping styles.
-            - Decision Speed: Very fast or very slow decisions could be stress indicators.
-            - Choice Consistency: High consistency might mean a clear approach; low might mean indecisiveness or varied coping mechanisms.
-            - Story Path: Choices related to avoidance, worry, or seeking help can be informative.
-
-        Cross-Game Analysis:
-        - Correlate findings. E.g., if memory game shows high errors AND narrative choices show high anxiety, this might indicate cognitive stress linked to emotional state.
-        - If breathing sync is high DESPITE high difficulty in memory game, it's a strength.
-
-        IMPORTANT: Ensure your entire response is ONLY the JSON object described above, with no other text before or after it.
-        The JSON keys must be exactly as specified. Values should be appropriate types.
+        I valori devono essere appropriati ai dati forniti.
         `;
+
+        return prompt;
     }
 
     // Construct the prompt using the validated results
@@ -165,8 +154,9 @@ export async function POST(request: Request) {
         return NextResponse.json(fallbackAnalysis, { status: 200, headers: { 'X-Analysis-Source': 'Fallback-Parse-Error' } });
       }
 
-    } catch (apiError: any) {
-      console.error('Groq API call failed. Using fallback.', apiError.message || apiError);
+    } catch (apiError: unknown) {
+      const errorMessage = apiError instanceof Error ? apiError.message : 'Unknown API error';
+      console.error('Groq API call failed. Using fallback.', errorMessage);
       const fallbackAnalysis = getFallbackAnalysis(cosmicResults, memoryResults, narrativeResults);
       return NextResponse.json(fallbackAnalysis, { status: 200, headers: { 'X-Analysis-Source': 'Fallback-API-Error' } });
     }
