@@ -1,60 +1,122 @@
-'use client'; // If using context hook
+'use client';
 
 import React from 'react';
-import { useGameContext } from '@/context/GameContext'; // Import the context hook
+import { useGameContext } from '@/context/GameContext';
 
 interface ProgressBarProps {
-  // currentStep and totalSteps will now come from context or be fixed
   className?: string;
 }
 
-const stepLabels = ["Intro", "Cosmic Calm", "Stellar Memory", "Narrative Waves", "Results"];
-const TOTAL_STEPS = 5; // Total number of main stages including intro and results view trigger
+const stepLabels = [
+  { name: "Introduzione", icon: "🚀" },
+  { name: "Cosmic Calm", icon: "✨" },
+  { name: "Stellar Memory", icon: "🌟" },
+  { name: "Narrative Waves", icon: "🌌" },
+  { name: "Risultati", icon: "🎯" }
+];
+
+const TOTAL_STEPS = 5;
 
 const ProgressBar: React.FC<ProgressBarProps> = ({ className = '' }) => {
   const { state } = useGameContext();
-  const { currentGame, isComplete } = state; // currentGame: 0=intro, 1=cosmic, 2=memory, 3=narrative, 4=results trigger
+  const { currentGame, isComplete } = state;
 
-  // Determine the current step for progress bar display.
-  // If game is complete and we are on "results" view (triggered by currentGame === 4), show full progress.
   let displayStep = currentGame;
-  if (isComplete && currentGame === TOTAL_STEPS -1) { // currentGame is 4, which means results page
-    displayStep = TOTAL_STEPS -1; // Show full progress for results page
-  } else if (currentGame >= TOTAL_STEPS -1) { // If somehow currentGame goes beyond results trigger, cap it for display
-    displayStep = TOTAL_STEPS -1;
+  if (isComplete && currentGame === TOTAL_STEPS - 1) {
+    displayStep = TOTAL_STEPS - 1;
+  } else if (currentGame >= TOTAL_STEPS - 1) {
+    displayStep = TOTAL_STEPS - 1;
   }
 
-
-  // Normalized current step for 0-indexed array of labels.
-  // Max is TOTAL_STEPS - 1, so for 5 steps, indices are 0,1,2,3,4
   const normalizedCurrentStep = Math.max(0, Math.min(displayStep, TOTAL_STEPS - 1));
-
-  // Progress percentage should be based on segments completed towards the "Results" label.
-  // If there are 5 labels (0 to 4), progress to "Results" (index 4) means 4 out of 4 segments are done.
-  // So, if current step is `N`, `N` segments are "active or done" out of `TOTAL_STEPS - 1` game segments.
   const progressPercentage = TOTAL_STEPS > 1 ? (normalizedCurrentStep / (TOTAL_STEPS - 1)) * 100 : 0;
 
-
   return (
-    <div className={`w-full ${className} py-2`}> {/* Added some padding */}
-      <div className="flex justify-between mb-1 px-1 sm:px-2">
-        {stepLabels.map((label, index) => (
-          <div
-            key={index}
-            className={`text-xs sm:text-sm text-center flex-1 transition-colors duration-300
-                        ${index < normalizedCurrentStep ? 'text-star-gold' : ''}
-                        ${index === normalizedCurrentStep ? 'text-white font-semibold scale-105' : ''}
-                        ${index > normalizedCurrentStep ? 'text-gray-400 opacity-70' : ''}`}
-          >
-            {label}
-          </div>
-        ))}
+    <div className={`w-full ${className}`}>
+      
+      {/* Steps indicators */}
+      <div className="flex justify-between items-center mb-4 px-2">
+        {stepLabels.map((step, index) => {
+          const isActive = index === normalizedCurrentStep;
+          const isCompleted = index < normalizedCurrentStep;
+          const isPending = index > normalizedCurrentStep;
+          
+          return (
+            <div key={index} className="flex flex-col items-center flex-1 relative">
+              
+              {/* Step circle with icon */}
+              <div className={`
+                relative w-12 h-12 rounded-full flex items-center justify-center text-lg transition-all duration-500 transform
+                ${isCompleted 
+                  ? 'bg-gradient-to-br from-star-gold-400 to-aurora-pink-500 text-white shadow-lg shadow-star-gold-500/30 scale-100' 
+                  : isActive 
+                    ? 'bg-gradient-to-br from-cosmic-blue-500 to-nebula-purple-500 text-white shadow-xl shadow-cosmic-blue-500/50 scale-110 animate-pulse-slow' 
+                    : 'bg-white/10 backdrop-blur-md text-slate-400 border border-white/20'
+                }
+              `}>
+                <span className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>
+                  {step.icon}
+                </span>
+                
+                {/* Glow effect for active step */}
+                {isActive && (
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cosmic-blue-400 to-nebula-purple-400 animate-ping opacity-30"></div>
+                )}
+              </div>
+              
+              {/* Step label */}
+              <div className="mt-2 text-center">
+                <p className={`
+                  text-xs sm:text-sm font-medium transition-all duration-300
+                  ${isCompleted 
+                    ? 'text-star-gold-400' 
+                    : isActive 
+                      ? 'text-white font-semibold' 
+                      : 'text-slate-400'
+                  }
+                `}>
+                  {step.name}
+                </p>
+              </div>
+              
+              {/* Connection line to next step */}
+              {index < stepLabels.length - 1 && (
+                <div className="absolute top-6 left-full w-full h-0.5 -translate-y-1/2 hidden sm:block">
+                  <div className={`
+                    h-full transition-all duration-500
+                    ${index < normalizedCurrentStep 
+                      ? 'bg-gradient-to-r from-star-gold-400 to-aurora-pink-500' 
+                      : 'bg-white/20'
+                    }
+                  `}></div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
-      <div className="w-full bg-deep-space/70 rounded-full h-2.5 shadow-inner mx-auto max-w-3xl"> {/* Centered bar */}
-        <div
-          className="bg-gradient-to-r from-nebula-purple via-cosmic-blue to-star-gold h-2.5 rounded-full transition-all duration-500 ease-out"
-          style={{ width: `${progressPercentage}%` }}
-        />
+
+      {/* Modern progress bar */}
+      <div className="relative">
+        <div className="w-full bg-white/10 backdrop-blur-md rounded-full h-3 shadow-inner border border-white/20">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-star-gold-400 via-aurora-pink-500 to-cosmic-blue-500 transition-all duration-700 ease-out relative overflow-hidden"
+            style={{ width: `${progressPercentage}%` }}
+          >
+            {/* Animated shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+          </div>
+        </div>
+        
+        {/* Progress percentage indicator */}
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-xs text-slate-400">
+            Progresso
+          </span>
+          <span className="text-xs font-medium text-white">
+            {Math.round(progressPercentage)}%
+          </span>
+        </div>
       </div>
     </div>
   );
