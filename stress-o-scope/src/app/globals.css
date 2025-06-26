@@ -3,54 +3,244 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 15, 23, 42;
+  --background-end-rgb: 2, 6, 23;
 
-  /* Cosmic Theme Colors */
-  --deep-space: #0A0A22;
-  --nebula-purple: #8A2BE2;
-  --star-gold: #FFD700;
-  --cosmic-blue: #2E2EFE;
+  /* Modern Cosmic Theme Colors */
+  --deep-space: #020617;
+  --nebula-purple: #7c3aed;
+  --star-gold: #fbbf24;
+  --cosmic-blue: #2563eb;
+  --aurora-pink: #ec4899;
+  --void-black: #0f172a;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0; /* Or a dark cosmic color */
-  }
+/* Modern smooth scrolling and base styles */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-  /* Default body background, can be overridden by layouts */
+    135deg,
+    rgb(var(--background-start-rgb)) 0%,
+    rgb(var(--background-end-rgb)) 100%
+  );
+  min-height: 100vh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Breathing Circle Animation */
+/* Custom animations */
 @keyframes pulseBreath {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(138, 43, 226, 0.7); } /* Nebula Purple base, inhale start */
-  33.33% { transform: scale(1.1); box-shadow: 0 0 10px 10px rgba(138, 43, 226, 0.3); } /* Inhale end / Hold start */
-  66.66% { transform: scale(1.1); box-shadow: 0 0 10px 10px rgba(138, 43, 226, 0.3); } /* Hold end / Exhale start */
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(138, 43, 226, 0.0); } /* Exhale end */
+  0%, 100% { 
+    transform: scale(0.95); 
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7); 
+  }
+  33.33% { 
+    transform: scale(1.05); 
+    box-shadow: 0 0 20px 10px rgba(124, 58, 237, 0.3); 
+  }
+  66.66% { 
+    transform: scale(1.05); 
+    box-shadow: 0 0 20px 10px rgba(124, 58, 237, 0.3); 
+  }
 }
 
-.animate-pulseBreath {
-  animation: pulseBreath 12s infinite ease-in-out;
-}
-
-/* Simple Fade-in Animation */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 5px rgba(124, 58, 237, 0.5); }
+  100% { box-shadow: 0 0 25px rgba(124, 58, 237, 0.8), 0 0 35px rgba(124, 58, 237, 0.6); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Utility classes */
+.animate-pulseBreath {
+  animation: pulseBreath 8s infinite ease-in-out;
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.animate-shimmer {
+  animation: shimmer 2.5s ease-in-out infinite;
+}
+
+.animate-twinkle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+/* Modern animate-in utilities */
+.animate-in {
+  animation-fill-mode: both;
+}
+
+.slide-in-from-bottom {
+  animation: slideInFromBottom 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-in-from-right {
+  animation: slideInFromRight 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-in-from-left {
+  animation: slideInFromLeft 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.zoom-in {
+  animation: zoomIn 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.duration-300 { animation-duration: 300ms; }
+.duration-500 { animation-duration: 500ms; }
+.duration-700 { animation-duration: 700ms; }
+
+/* Glass morphism utility */
+.glass {
+  backdrop-filter: blur(16px) saturate(180%);
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  backdrop-filter: blur(16px) saturate(180%);
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7c3aed, #2563eb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #8b5cf6, #3b82f6);
+}
+
+/* Selection color */
+::selection {
+  background: rgba(124, 58, 237, 0.3);
+  color: white;
+}
+
+/* Focus styles */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(124, 58, 237, 0.8);
+  outline-offset: 2px;
+}
+
+/* Improved text rendering */
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.text-glow {
+  text-shadow: 0 0 10px rgba(124, 58, 237, 0.8);
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .slide-in-from-bottom,
+  .slide-in-from-right,
+  .slide-in-from-left {
+    animation-duration: 0.5s;
+  }
 }
