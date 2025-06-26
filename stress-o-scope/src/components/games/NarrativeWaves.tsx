@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGameContext } from '@/context/GameContext';
 import { Button } from '@/components/ui';
-import { NarrativeResults } from '@/context/GameTypes';
+import { NarrativeResults, PsychProfileDimensions } from '@/context/GameTypes';
 
 // TypeScript Interfaces
 export interface PsychProfileDimensions {
