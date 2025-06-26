@@ -127,7 +127,7 @@ const CosmicCalm: React.FC = () => {
   const [gameStartTime, setGameStartTime] = useState<number>(0);
   const [phaseStartTime, setPhaseStartTime] = useState<number>(0);
   // To store collected metrics before sending to context
-  const [metrics, setMetrics] = useState<Partial<CosmicResults>>({});
+  // const [metrics, setMetrics] = useState<Partial<CosmicResults>>({});
 
   const interactiveAreaRef = useRef<HTMLDivElement>(null);
 
