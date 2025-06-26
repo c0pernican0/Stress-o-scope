@@ -206,7 +206,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     } catch (apiError: unknown) {
       const errorMessage = apiError instanceof Error ? apiError.message : 'Unknown API error';
       console.error('Groq API call failed. Using fallback.', errorMessage);      
-      setAnalysisError(error.message || "An unexpected error occurred while fetching analysis.");
+      setAnalysisError(errorMessage);
     }
   }, [state.cosmicResults, state.memoryResults, state.narrativeResults, setAnalysisComplete, setAnalysisError]);
 
