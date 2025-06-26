@@ -1,5 +1,5 @@
-import { getFallbackAnalysis } from '@/utils/analysisEngine';
-import { CosmicResults, MemoryResults, NarrativeResults, FinalAnalysis, PsychProfileDimensions } from '@/context/GameTypes';
+import { generateFallbackAnalysis } from '../../utils/analysisEngine';
+import { CosmicResults, MemoryResults, NarrativeResults} from '@/context/GameTypes';
 
 // Mock data for testing
 const mockCosmicResults: CosmicResults = {
