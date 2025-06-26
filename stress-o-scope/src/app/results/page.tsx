@@ -5,7 +5,7 @@ import { useGameContext } from '@/context/GameContext';
 import { useRouter } from 'next/navigation';
 import { ResultsSummary } from '@/components/results'; // Assuming ResultsSummary is exported from results/index.ts
 import { LoadingSpinner, Button } from '@/components/ui';
-import type { Metadata } from 'next';
+// import type { Metadata } from 'next';
 
 // Static metadata for results page. Dynamic aspects handled by ResultsSummary.
 // export const metadata: Metadata = {
@@ -39,11 +39,6 @@ const ResultsPage: React.FC = () => {
       // For now, ResultsSummary will show "Analysis Not Available".
     }
   }, [isComplete, finalAnalysis, analysisLoading, analysisError, currentGame, router]);
-
-  const handleTakeTestAgain = () => {
-    resetSession();
-    router.push('/');
-  };
 
   // ResultsSummary component itself handles internal loading/error/no-data states for finalAnalysis.
   // This page primarily ensures the user should be here.
