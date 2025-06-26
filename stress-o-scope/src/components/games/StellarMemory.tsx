@@ -230,7 +230,7 @@ const StellarMemory: React.FC = () => {
     if (gamePhase !== 'listening' || !breathingCircleRef.current || !gameContainerRef.current) return;
 
     const circleRect = breathingCircleRef.current.getBoundingClientRect();
-    const containerRect = gameContainerRef.current.getBoundingClientRect();
+    // const containerRect = gameContainerRef.current.getBoundingClientRect();
 
     // Calculate circle center relative to the viewport
     const circleCenterX = circleRect.left + circleRect.width / 2;
