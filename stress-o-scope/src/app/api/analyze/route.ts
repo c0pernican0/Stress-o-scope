@@ -1,17 +1,7 @@
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import { CosmicResults, MemoryResults, NarrativeResults, FinalAnalysis } from '@/context/GameTypes';
-import { getFallbackAnalysis } from '@/utils/analysisEngine'; // Import fallback function
-
-// Ensure the API key is available
-if (!process.env.GROQ_API_KEY) {
-  console.error('GROQ_API_KEY is not set in environment variables.');
-  // Optionally, throw an error at startup or handle this more gracefully
-}
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+import { getFallbackAnalysis } from '@/utils/analysisEngine';
 
 export async function POST(request: Request) {
   try {
@@ -27,19 +17,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing game results data.' }, { status: 400 });
     }
 
-    // Placeholder for prompt engineering and Groq call (Step 4 & 5)
-    // Placeholder for fallback logic (Step 6 & 7)
+    // Initialize Groq inside the function (runtime) instead of at module level (build time)
+    let groq: Groq | null = null;
+    
+    if (process.env.GROQ_API_KEY) {
+      try {
+        groq = new Groq({
+          apiKey: process.env.GROQ_API_KEY,
+        });
+      } catch (initError) {
+        console.error('Failed to initialize Groq client:', initError);
+        groq = null;
+      }
+    } else {
+      console.warn('GROQ_API_KEY is not set in environment variables. Using fallback analysis.');
+    }
 
     function constructAnalysisPrompt(
         cosmic: CosmicResults,
         memory: MemoryResults,
         narrative: NarrativeResults
     ): string {
-        // Helper to format arrays/objects nicely for the prompt
         const formatArray = (arr: unknown[] | undefined | null) => arr && arr.length > 0 ? arr.join(', ') : 'N/A';
         const formatObject = (obj: object | undefined | null) => obj ? JSON.stringify(obj, null, 2) : 'N/A';
 
-        // Constructing detailed data presentation for each game
         const cosmicData = `
         Game 1: Cosmic Calm
         - Initial Element Chosen: ${cosmic.initialElement || 'N/A'}
@@ -105,72 +106,74 @@ export async function POST(request: Request) {
         return prompt;
     }
 
-    // Construct the prompt using the validated results
-    const prompt = constructAnalysisPrompt(cosmicResults, memoryResults, narrativeResults);
-    // console.log("API Route: Constructed Prompt for Groq:\n", prompt); // Keep for debugging if needed
-
-    try {
-      console.log("Attempting Groq API call...");
-      const completion = await groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: "mixtral-8x7b-32768",
-        temperature: 0.7, // Adjust for creativity vs. determinism
-        // max_tokens: 1024, // Optional: limit response size
-        response_format: { type: "json_object" }, // Crucial for getting JSON output
-      });
-
-      const aiResponseContent = completion.choices[0]?.message?.content;
-      if (!aiResponseContent) {
-        console.error('Groq API returned empty content. Using fallback.');
-        const fallbackAnalysis = getFallbackAnalysis(cosmicResults, memoryResults, narrativeResults);
-        return NextResponse.json(fallbackAnalysis, { status: 200, headers: { 'X-Analysis-Source': 'Fallback' } });
-      }
-
-      console.log("Groq API Raw Response:", aiResponseContent);
-
-      let analysisResult: FinalAnalysis;
+    // Try Groq API if available, otherwise use fallback
+    if (groq) {
+      const prompt = constructAnalysisPrompt(cosmicResults, memoryResults, narrativeResults);
+      
       try {
-        analysisResult = JSON.parse(aiResponseContent);
-        // Basic validation of the parsed JSON structure
-        if (
-          typeof analysisResult.stressLevel !== 'number' ||
-          !Array.isArray(analysisResult.stressAreas) ||
-          !Array.isArray(analysisResult.strengths) ||
-          !Array.isArray(analysisResult.recommendations) ||
-          typeof analysisResult.cosmicHoroscope !== 'string' ||
-          typeof analysisResult.summary !== 'string'
-        ) {
-            console.error("Invalid JSON structure from AI. Using fallback.", analysisResult);
-            const fallbackAnalysis = getFallbackAnalysis(cosmicResults, memoryResults, narrativeResults);
-            return NextResponse.json(fallbackAnalysis, { status: 200, headers: { 'X-Analysis-Source': 'Fallback-Invalid-AI-Structure' } });
+        console.log("Attempting Groq API call...");
+        const completion = await groq.chat.completions.create({
+          messages: [{ role: 'user', content: prompt }],
+          model: "mixtral-8x7b-32768",
+          temperature: 0.7,
+          response_format: { type: "json_object" },
+        });
+
+        const aiResponseContent = completion.choices[0]?.message?.content;
+        if (!aiResponseContent) {
+          console.error('Groq API returned empty content. Using fallback.');
+          const fallbackAnalysis = getFallbackAnalysis(cosmicResults, memoryResults, narrativeResults);
+          return NextResponse.json(fallbackAnalysis, { status: 200, headers: { 'X-Analysis-Source': 'Fallback-Empty-Response' } });
         }
-        console.log("Groq API Parsed and Validated Response:", analysisResult);
-        return NextResponse.json(analysisResult, { status: 200, headers: { 'X-Analysis-Source': 'AI' } });
 
-      } catch (parseError) {
-        console.error('Failed to parse JSON response from Groq. Using fallback.', parseError);
-        console.error('Malformed JSON string:', aiResponseContent);
+        console.log("Groq API Raw Response:", aiResponseContent);
+
+        let analysisResult: FinalAnalysis;
+        try {
+          analysisResult = JSON.parse(aiResponseContent);
+          
+          // Basic validation of the parsed JSON structure
+          if (
+            typeof analysisResult.stressLevel !== 'number' ||
+            !Array.isArray(analysisResult.stressAreas) ||
+            !Array.isArray(analysisResult.strengths) ||
+            !Array.isArray(analysisResult.recommendations) ||
+            typeof analysisResult.cosmicHoroscope !== 'string' ||
+            typeof analysisResult.summary !== 'string'
+          ) {
+              console.error("Invalid JSON structure from AI. Using fallback.", analysisResult);
+              const fallbackAnalysis = getFallbackAnalysis(cosmicResults, memoryResults, narrativeResults);
+              return NextResponse.json(fallbackAnalysis, { status: 200, headers: { 'X-Analysis-Source': 'Fallback-Invalid-AI-Structure' } });
+          }
+          
+          console.log("Groq API Parsed and Validated Response:", analysisResult);
+          return NextResponse.json(analysisResult, { status: 200, headers: { 'X-Analysis-Source': 'AI' } });
+
+        } catch (parseError) {
+          console.error('Failed to parse JSON response from Groq. Using fallback.', parseError);
+          console.error('Malformed JSON string:', aiResponseContent);
+          const fallbackAnalysis = getFallbackAnalysis(cosmicResults, memoryResults, narrativeResults);
+          return NextResponse.json(fallbackAnalysis, { status: 200, headers: { 'X-Analysis-Source': 'Fallback-Parse-Error' } });
+        }
+
+      } catch (apiError: unknown) {
+        const errorMessage = apiError instanceof Error ? apiError.message : 'Unknown API error';
+        console.error('Groq API call failed. Using fallback.', errorMessage);
         const fallbackAnalysis = getFallbackAnalysis(cosmicResults, memoryResults, narrativeResults);
-        return NextResponse.json(fallbackAnalysis, { status: 200, headers: { 'X-Analysis-Source': 'Fallback-Parse-Error' } });
+        return NextResponse.json(fallbackAnalysis, { status: 200, headers: { 'X-Analysis-Source': 'Fallback-API-Error' } });
       }
-
-    } catch (apiError: unknown) {
-      const errorMessage = apiError instanceof Error ? apiError.message : 'Unknown API error';
-      console.error('Groq API call failed. Using fallback.', errorMessage);
+    } else {
+      // No Groq API available, use fallback directly
+      console.log('Groq API not available. Using fallback analysis.');
       const fallbackAnalysis = getFallbackAnalysis(cosmicResults, memoryResults, narrativeResults);
-      return NextResponse.json(fallbackAnalysis, { status: 200, headers: { 'X-Analysis-Source': 'Fallback-API-Error' } });
+      return NextResponse.json(fallbackAnalysis, { status: 200, headers: { 'X-Analysis-Source': 'Fallback-No-API' } });
     }
 
   } catch (error) {
     console.error('Error in /api/analyze (outer try-catch):', error);
-    if (error instanceof SyntaxError) { // JSON parsing error
+    if (error instanceof SyntaxError) {
         return NextResponse.json({ error: 'Invalid request body: Malformed JSON.' }, { status: 400 });
     }
     return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
   }
 }
-
-// Optional: Add a GET handler or other methods if needed, though not required by the plan.
-// export async function GET(request: Request) {
-//   return NextResponse.json({ message: 'This is the analyze API endpoint. Use POST to submit data.' });
-// }
